@@ -6,6 +6,7 @@ mod generate;
 use derive_builder::Builder;
 // use generate::*;
 mod rust_input;
+use lib_flutter_rust_bridge_codegen::{frb_codegen, get_symbols_if_no_duplicates};
 use rust_input::*;
 
 pub(crate) use convert_case::{Case, Casing};
@@ -58,6 +59,7 @@ impl OptArray {
     }
 }
 
+/// api
 impl OptArray {
     // fn remove(content: String, keys: Vec<String>) -> String {
     //     content
@@ -137,5 +139,15 @@ impl OptArray {
             });
         dest_rust_content += "\npub use crate::bridge_generated_bound::*;\n";
         fs::write(d, dest_rust_content).unwrap();
+    }
+    pub fn run_flutter_rust_bridged(&self) {
+        let mut configs = self.configs.clone();
+        for mut opt in configs.iter_mut() {
+            opt.rust_input_path = opt.rust_input_path.replace(".rs", "_translate.rs");
+        }
+        let all_symbols = get_symbols_if_no_duplicates(&configs).unwrap();
+        for config in configs.iter() {
+            frb_codegen(config, &all_symbols).unwrap();
+        }
     }
 }
