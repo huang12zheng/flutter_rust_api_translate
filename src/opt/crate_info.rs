@@ -1,4 +1,5 @@
 /// source from https://github.com/fzyzcjy/flutter_rust_bridge/blob/5e4e8f5b04a708793b2517bc9744c8a6993b9d6d/frb_codegen/src/source_graph.rs
+pub use super::*;
 use cargo_metadata::MetadataCommand;
 use log::{debug, warn};
 use std::{
@@ -9,7 +10,9 @@ use std::{
 };
 use syn::{Attribute, Ident, ItemEnum, ItemStruct, Type, __private::quote::__private::TokenTree};
 mod module_info;
-pub use module_info::*;
+
+mod intersection;
+pub use intersection::intersection_bound_trait_to_object_pool;
 
 /// Represents a crate, including a map of its modules, imports, structs and
 /// enums.
@@ -200,7 +203,7 @@ fn try_get_module_file_path(
 fn get_module_file_path(
     module_name: String,
     parent_module_file_path: &Path,
-) -> Result<PathBuf, Vec<PathBuf>> {
+) -> core::result::Result<PathBuf, Vec<PathBuf>> {
     let mut tried = Vec::new();
 
     if let Some(file_path) = try_get_module_file_path(

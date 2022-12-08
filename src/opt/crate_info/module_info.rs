@@ -15,7 +15,6 @@ impl Debug for Module {
 impl Module {
     pub fn resolve(&mut self) {
         self.resolve_modules();
-        // self.resolve_imports();
     }
 
     /// Maps out modules, structs and enums within the scope of this module

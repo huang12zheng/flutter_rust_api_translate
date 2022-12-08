@@ -220,14 +220,6 @@ mod parse_args {
         debug!("parse_function function name: {:?}", func.sig.ident);
 
         let sig = func.sig;
-        // let func_name = sig.ident.to_string();
-
-        // let mut inputs = Vec::new();
-        // let mut output = None;
-        // let mut fallible = true;
-
-        // sig.inputs.
-        // sig.output
 
         let inputs = sig
             .inputs
@@ -256,27 +248,6 @@ mod parse_args {
     /// case for top-level `StreamSink` types.
     fn try_parse_fn_arg_type(ty: &syn::Type) -> Option<TypeImplTrait> {
         match ty {
-            // syn::Type::Path(syn::TypePath { path, .. }) => {
-            //     let last_segment = path.segments.last().unwrap();
-            //     if last_segment.ident == STREAM_SINK_IDENT {
-            //         match &last_segment.arguments {
-            //             syn::PathArguments::AngleBracketed(
-            //                 syn::AngleBracketedGenericArguments { args, .. },
-            //             ) if args.len() == 1 => {
-            //                 // Unwrap is safe here because args.len() == 1
-            //                 match args.last().unwrap() {
-            //                     syn::GenericArgument::Type(t) => {
-            //                         Some(IrFuncArg::StreamSinkType(self.type_parser.parse_type(t)))
-            //                     }
-            //                     _ => None,
-            //                 }
-            //             }
-            //             _ => None,
-            //         }
-            //     } else {
-            //         Some(IrFuncArg::Type(self.type_parser.parse_type(ty)))
-            //     }
-            // }
             // syn::Type::Array(_) |
             syn::Type::ImplTrait(input) => {
                 Some(input.clone())

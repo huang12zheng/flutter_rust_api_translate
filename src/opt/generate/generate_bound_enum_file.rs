@@ -66,7 +66,7 @@ impl OptArray {
         fs::write("src/bridge_generated_bound.rs", lines).unwrap();
     }
 
-    fn get_api_paths(&self) -> HashSet<String> {
+    pub fn get_api_paths(&self) -> HashSet<String> {
         let mut explicit_api_path: HashSet<String> = HashSet::new();
         for config in self.configs.iter() {
             explicit_api_path.insert(

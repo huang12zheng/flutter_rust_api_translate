@@ -30,25 +30,7 @@ impl IrFile {
         // info!("Phase: Parse AST to IR");
         let ir_type_impl_traits = get_sig_args(&file_ast);
 
-        // consume from [Crate]
-        // let struct_pool = crate_info
-        //     .root_module
-        //     .collect_structs_to_pool()
-        //     .into_iter()
-        //     .map(|(k, v)| (k, v.to_owned()))
-        //     .collect();
-        // let enum_pool = crate_info
-        //     .root_module
-        //     .collect_enums_to_pool()
-        //     .into_iter()
-        //     .map(|(k, v)| (k, v.to_owned()))
-        //     .collect();
-        // let trait_to_impl_pool = crate_info.root_module.collect_impls_to_pool();
-
         IrFile {
-            // struct_pool,
-            // enum_pool,
-            // trait_to_impl_pool,
             ir_type_impl_traits,
         }
     }

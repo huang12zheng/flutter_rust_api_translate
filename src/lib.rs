@@ -16,6 +16,7 @@ mod tests {
 
     /// Path of input Rust code
     pub const RUST_INPUT: &str = "src/api.rs";
+    // pub const RUST_INPUT: &str = "src/api.rs";
     /// Path of output generated Dart code
     pub const DART_OUTPUT: &str = "../dart/lib/bridge_generated.dart";
 

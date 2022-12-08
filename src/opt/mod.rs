@@ -8,12 +8,11 @@ use derive_builder::Builder;
 mod rust_input;
 use rust_input::*;
 
+pub(crate) use convert_case::{Case, Casing};
 pub(crate) use std::collections::{HashMap, HashSet};
-pub(crate) use std::fmt::Display;
 pub(crate) use std::fs;
 pub(crate) use std::hash::Hash;
 pub(crate) use std::iter::FromIterator;
-pub(crate) use std::process::Command;
 pub(crate) use syn::{punctuated::Punctuated, token::Colon, *};
 
 pub use lib_flutter_rust_bridge_codegen::Opts;
@@ -29,18 +28,6 @@ pub struct OptArray {
 }
 
 impl OptArray {
-    // pub fn new_without_resolve(configs: &[Opts]) -> Self {
-    //     OptArray {
-    //         configs: configs.to_owned(),
-    //         // irs: Vec::new(),
-    //         trait_to_impl_pool: HashMap::new(),
-    //         // parsed_impl_traits: HashSet::new(),
-    //         bound_oject_pool: HashMap::new(),
-    //         root_src_file: String::new(),
-    //         crate_info: None,
-    //     }
-    // }
-
     pub fn new(configs: &[Opts]) -> Self {
         // let mut opts = Self::new_without_resolve(configs);
         let crate_info = Crate::new(&configs[0].manifest_path);
@@ -71,68 +58,84 @@ impl OptArray {
     }
 }
 
-fn intersection_bound_trait_to_object_pool(
-    ir_type_impl_traits_pool: HashSet<IrTypeImplTrait>,
-    trait_to_impl_pool: &HashMap<String, Vec<Impl>>,
-) -> HashMap<Vec<String>, HashSet<String>> {
-    ir_type_impl_traits_pool
-        .iter()
-        .flat_map(|ty| &ty.trait_bounds)
-        .for_each(|trait_| {
-            if !trait_to_impl_pool.contains_key(trait_) {
-                panic!("loss impl {} for some self_ty", trait_);
-            }
-        });
-    // ir_type_impl_traits_pool.iter().for_each(|type_impl_trait| {
-    //     type_impl_trait.trait_bounds.iter().for_each(|trait_| {
-    //         // Check whether the trait bound is capable of being used
-    //         // ~~return None if param unoffical~~
-    //         if !trait_to_impl_pool.contains_key(trait_) {
-    //             panic!("loss impl {} for some self_ty", trait_);
-    //         }
-    //     });
-    // });
-    ir_type_impl_traits_pool
-        .into_iter()
-        .map(|ty| ty.trait_bounds)
-        .map(|trait_bounds| {
-            let sets = trait_bounds.iter().map(|trait_| {
-                let impls = trait_to_impl_pool.get(trait_).unwrap();
-                let iter = impls.iter().map(|impl_| impl_.self_ty.to_string());
-                HashSet::from_iter(iter)
-            });
-
-            let mut iter = sets;
-
-            let intersection_set = iter
-                .next()
-                .map(|set: HashSet<String>| iter.fold(set, |set1, set2| &set1 & &set2))
-                .unwrap();
-            (trait_bounds, intersection_set)
-        })
-        .collect()
-}
-
 impl OptArray {
+    // fn remove(content: String, keys: Vec<String>) -> String {
+    //     content
+    //         .split("\n")
+    //         .filter(|line| keys.iter().all(|key| !line.contains(key)))
+    //         .join("\n")
+    // }
+    fn remove_with_path(path: &str, keys: Vec<String>) {
+        let content = fs::read_to_string(path).unwrap();
+        let content = content
+            .split('\n')
+            .filter(|line| keys.iter().all(|key| !line.contains(key)))
+            .join("\n");
+        fs::write(path, content).unwrap();
+    }
+    fn to_translation(s: &str) -> String {
+        format!("{}_translate", s)
+    }
     pub fn run_generate_bound_enum(&self) {
         // remove generate source dependencies
-        self.remove_gen_mod(&self.root_src_file);
-        for config in self.configs.iter() {
-            let api_file = config.rust_input_path.clone();
-            self.remove_gen_use(api_file);
-        }
+        let mut ds: Vec<String> = self
+            .get_api_paths()
+            .iter()
+            .map(|s| Self::to_translation(s))
+            .collect();
+        ds.push("mod bridge_generated_bound;".to_owned());
+        // no need handle api.file use; due to we are copy.
+        Self::remove_with_path(&self.root_src_file, ds);
 
+        // generate enum file
         if !self.bound_oject_pool.is_empty() {
             self.generate_impl_file();
-
-            // generate source dependencies
-            self.gen_mod(&self.root_src_file);
-            for config in self.configs.iter() {
-                let api_file = config.rust_input_path.clone();
-                self.gen_use(api_file);
-            }
         }
     }
-}
+    pub fn run_generate_api_translation(&self) {
+        let map = self
+            .configs
+            .iter()
+            .map(|config| &config.rust_input_path)
+            .map(|s| (s.to_owned(), s.replace(".rs", "_translate.rs")));
+        // handle_translate() call for each api file
+        map.clone().for_each(|(s, d)| self.handle_translate(s, d));
 
-mod handle_use_info;
+        // handle lib.rs
+        let root_rust_content = fs::read_to_string(&self.root_src_file).unwrap();
+        let mut ds: Vec<String> = self
+            .get_api_paths()
+            .iter()
+            .map(|s| Self::to_translation(s))
+            .map(|d| format!("mod {};", d))
+            .collect();
+        ds.push("mod bridge_generated_bound;".to_owned());
+        let addition_content = ds.join("\n");
+        fs::write(
+            &self.root_src_file,
+            root_rust_content + "\n" + &addition_content,
+        )
+        .unwrap();
+    }
+    // fn get_translate_pool()
+    fn handle_translate(&self, s: String, d: String) {
+        let source_rust_content = fs::read_to_string(s).unwrap();
+        let mut dest_rust_content = self
+            .bound_oject_pool
+            .keys()
+            .sorted_by(|a, b| Ord::cmp(&a.len(), &b.len()))
+            .map(|k| (k.join(" + "), k.iter().join("_")))
+            .map(|(s, d)| {
+                (
+                    format!(": impl {}", s),
+                    format!(": {}Enum", d.to_case(Case::Pascal)),
+                )
+            })
+            .fold(source_rust_content, |mut state, (s, d)| {
+                state = state.replace(&s, &d);
+                state
+            });
+        dest_rust_content += "\npub use crate::bridge_generated_bound::*;\n";
+        fs::write(d, dest_rust_content).unwrap();
+    }
+}
