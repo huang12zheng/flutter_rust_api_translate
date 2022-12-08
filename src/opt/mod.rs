@@ -77,8 +77,7 @@ fn intersection_bound_trait_to_object_pool(
 ) -> HashMap<Vec<String>, HashSet<String>> {
     ir_type_impl_traits_pool
         .iter()
-        .map(|ty| &ty.trait_bounds)
-        .flatten()
+        .flat_map(|ty| &ty.trait_bounds)
         .for_each(|trait_| {
             if !trait_to_impl_pool.contains_key(trait_) {
                 panic!("loss impl {} for some self_ty", trait_);

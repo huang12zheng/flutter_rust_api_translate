@@ -5,8 +5,8 @@ mod api {
     use super::*;
 
     pub fn get_fns(file: &File) -> Vec<ItemFn> {
-        let mut src_fns = extract_fns_from_file(&file);
-        src_fns.extend(extract_methods_from_file(&file));
+        let mut src_fns = extract_fns_from_file(file);
+        src_fns.extend(extract_methods_from_file(file));
         src_fns
     }
     // IrTypeImplTrait' raw data sort in [`convert_impl_trait_to_bound`]
@@ -14,8 +14,7 @@ mod api {
         let src_fns = get_fns(file);
         src_fns
             .into_iter()
-            .map(|f| parse_function(f))
-            .flatten()
+            .flat_map(parse_function)
             .unique()
             .collect()
     }
@@ -249,7 +248,7 @@ mod parse_args {
         sig_args.extend(output.into_iter().collect::<Vec<Type>>());
         sig_args
             .iter()
-            .filter_map(|ty| try_parse_fn_arg_type(ty))
+            .filter_map(try_parse_fn_arg_type)
             .map(convert_impl_trait_to_bound)
             .collect()
     }
