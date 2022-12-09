@@ -12,7 +12,9 @@ use syn::{Attribute, Ident, ItemEnum, ItemStruct, Type, __private::quote::__priv
 mod module_info;
 
 mod intersection;
+mod remove_dependencies;
 pub use intersection::intersection_bound_trait_to_object_pool;
+pub(crate) use remove_dependencies::*;
 
 /// Represents a crate, including a map of its modules, imports, structs and
 /// enums.

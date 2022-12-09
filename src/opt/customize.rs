@@ -47,7 +47,11 @@ fn parse_doc_with_root_file(
                 args: Vec::new(),
             };
             for item in iter {
-                let fn_ = item.replace("\\n", "\n");
+                let fn_ = item
+                    .replace("\\n", "\n")
+                    .as_str()
+                    .trim_end_matches(';')
+                    .to_owned();
                 if fn_.is_empty() {
                     continue;
                 }

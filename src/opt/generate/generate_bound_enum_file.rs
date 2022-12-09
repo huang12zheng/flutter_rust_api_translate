@@ -9,6 +9,8 @@ impl OptArray {
         let bound_oject_pool = &self.bound_oject_pool;
 
         let mut lines = String::new();
+        // lines += &format!("/* {:?}\n*/\n", bound_oject_pool,);
+        // lines += &format!("/* {:?}\n*/\n", self.trait_to_impl_pool,);
         for super_ in explicit_api_path.iter() {
             lines += format!("use crate::{super_}::*;\n").as_str();
         }
@@ -63,23 +65,10 @@ impl OptArray {
             }
         }
 
-        fs::write("src/bridge_generated_bound.rs", lines).unwrap();
+        fs::write(BOUND_PATH, lines).unwrap();
     }
 
     pub fn get_api_paths(&self) -> HashSet<String> {
-        let mut explicit_api_path: HashSet<String> = HashSet::new();
-        for config in self.configs.iter() {
-            explicit_api_path.insert(
-                config
-                    .rust_input_path
-                    .split('/')
-                    .last()
-                    .map(|s| s.split('.').next())
-                    .unwrap()
-                    .unwrap()
-                    .to_owned(),
-            );
-        }
-        explicit_api_path
+        self.configs.get_api_paths()
     }
 }

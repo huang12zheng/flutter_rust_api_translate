@@ -34,7 +34,7 @@ mod tests {
             ..Default::default()
         };
         let configs = config_parse(raw_opts);
-        let opts = OptArray::new(&configs);
+        let opts = OptArray::new_with_remove_translate(&configs);
         opts.run_generate_bound_enum();
     }
 }

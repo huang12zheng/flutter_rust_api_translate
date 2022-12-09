@@ -4,8 +4,10 @@
 mod file;
 pub use file::*;
 mod func;
+mod get_api_name;
 use super::*;
 pub use func::*;
+pub use get_api_name::*;
 pub use itertools::Itertools;
 
 pub type IrImplTraitPool = HashSet<IrTypeImplTrait>;
