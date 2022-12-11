@@ -88,6 +88,9 @@ impl OptArray {
         }
     }
     pub fn run_generate_api_translation(&self) {
+        if self.bound_oject_pool.is_empty() {
+            return;
+        }
         self.configs
             .get_translate()
             .iter()
