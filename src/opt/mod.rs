@@ -130,8 +130,10 @@ impl OptArray {
     }
     pub fn run_flutter_rust_bridged(&self) {
         let mut configs = self.configs.clone();
-        for mut opt in configs.iter_mut() {
-            opt.rust_input_path = opt.rust_input_path.replace(".rs", "_translate.rs");
+        if !self.bound_oject_pool.is_empty() {
+            for mut opt in configs.iter_mut() {
+                opt.rust_input_path = opt.rust_input_path.replace(".rs", "_translate.rs");
+            }
         }
         let all_symbols = get_symbols_if_no_duplicates(&configs).unwrap();
         for config in configs.iter() {
