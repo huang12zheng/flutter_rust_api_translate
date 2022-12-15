@@ -20,6 +20,7 @@ pub(crate) use syn::{punctuated::Punctuated, token::Colon, *};
 
 pub use lib_flutter_rust_bridge_codegen::Opts;
 const BOUND_PATH: &str = "src/bridge_generated_bound.rs";
+const FFI_PATH: &str = "../lib/ffi";
 #[derive(Builder)]
 pub struct OptArray {
     pub bound_oject_pool: HashMap<Vec<String>, HashSet<String>>,
@@ -28,6 +29,7 @@ pub struct OptArray {
     // pub irs: Vec<IrFile>,
     pub root_src_file: String,
     pub trait_to_impl_pool: TraitToImplPool,
+    pub type_pool: TypePool,
 }
 
 impl OptArray {
@@ -40,6 +42,7 @@ impl OptArray {
         crate_info.resolve();
 
         let trait_to_impl_pool = crate_info.root_module.collect_impls_to_pool();
+        let type_pool = crate_info.root_module.collect_types_to_pool();
         let configs = configs.to_owned();
         let ir_type_impl_traits_pool = configs.collect_irs().ir_type_impl_traits;
         // example:
@@ -60,6 +63,7 @@ impl OptArray {
             .root_src_file(root_src_file)
             .trait_to_impl_pool(trait_to_impl_pool)
             .bound_oject_pool(bound_oject_pool)
+            .type_pool(type_pool)
             .build()
             .unwrap()
     }
@@ -79,7 +83,7 @@ impl OptArray {
     }
     pub fn run_generate_bound_enum(&self) {
         // generate enum file
-        if !self.bound_oject_pool.is_empty() {
+        if self.need_translation() {
             self.generate_impl_file();
             addition_with_path(
                 &self.root_src_file,
@@ -87,8 +91,12 @@ impl OptArray {
             );
         }
     }
+
+    fn need_translation(&self) -> bool {
+        !(self.bound_oject_pool.is_empty() && self.type_pool.is_empty())
+    }
     pub fn run_generate_api_translation(&self) {
-        if self.bound_oject_pool.is_empty() {
+        if !self.need_translation() {
             return;
         }
         self.configs
@@ -109,6 +117,7 @@ impl OptArray {
     }
     // fn get_translate_pool()
     fn handle_translate(&self, s: impl AsRef<str>, d: impl AsRef<str>) {
+        // bound_oject_pool
         let source_rust_content = fs::read_to_string(s.as_ref()).unwrap();
         let mut dest_rust_content = self
             .bound_oject_pool
@@ -126,11 +135,21 @@ impl OptArray {
                 state
             });
         dest_rust_content += "\npub use crate::bridge_generated_bound::*;";
+        // type_pool
+        let source_rust_content = dest_rust_content;
+        let dest_rust_content =
+            self.type_pool
+                .iter()
+                .fold(source_rust_content, |mut state, (s, d)| {
+                    state = state.replace(s.as_str(), d.target.as_str());
+                    state
+                });
         fs::write(d.as_ref(), dest_rust_content).unwrap();
     }
+
     pub fn run_flutter_rust_bridged(&self) {
         let mut configs = self.configs.clone();
-        if !self.bound_oject_pool.is_empty() {
+        if self.need_translation() {
             for mut opt in configs.iter_mut() {
                 opt.rust_input_path = opt.rust_input_path.replace(".rs", "_translate.rs");
             }

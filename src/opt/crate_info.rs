@@ -49,6 +49,7 @@ pub struct ModuleScope {
     pub enums: Vec<Enum>,
     pub impls: Vec<Impl>,
     pub structs: Vec<Struct>,
+    pub type_alias: Vec<TypeAlias>,
 }
 
 impl Crate {
@@ -136,7 +137,6 @@ pub struct Struct {
     pub path: Vec<String>,
     pub mirror: bool,
 }
-
 impl Debug for Struct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Struct")
@@ -175,6 +175,12 @@ impl Debug for Enum {
 pub struct Impl {
     pub self_ty: Ident,
     pub trait_: Ident,
+}
+
+#[derive(Clone, Debug)]
+pub struct TypeAlias {
+    pub ident: String,
+    pub target: String,
 }
 
 /// Get a struct or enum ident, possibly remapped by a mirror marker

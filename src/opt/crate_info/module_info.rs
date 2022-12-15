@@ -23,6 +23,7 @@ impl Module {
         let mut scope_structs = Vec::new();
         let mut scope_enums = Vec::new();
         let mut scope_impls = Vec::new();
+        let mut scope_type = Vec::new();
 
         let items = match self.source.as_ref().unwrap() {
             ModuleSource::File(file) => &file.items,
@@ -85,6 +86,24 @@ impl Module {
                                 scope_impls.push(Impl {
                                     self_ty: type_path.path.get_ident().unwrap().to_owned(),
                                     trait_: trait_.to_owned(),
+                                })
+                            }
+                        }
+                    }
+                }
+                syn::Item::Type(item_type) => {
+                    if item_type.generics.where_clause.is_none()
+                        && item_type.generics.lt_token.is_none()
+                    {
+                        if let Type::Path(TypePath { qself: _, path }) = item_type.ty.as_ref() {
+                            if let Some(PathSegment {
+                                ident,
+                                arguments: _,
+                            }) = path.segments.first()
+                            {
+                                scope_type.push(TypeAlias {
+                                    ident: item_type.ident.to_string(),
+                                    target: ident.to_string(),
                                 })
                             }
                         }
@@ -163,6 +182,7 @@ impl Module {
             enums: scope_enums,
             structs: scope_structs,
             impls: scope_impls,
+            type_alias: scope_type,
         });
     }
 
@@ -220,6 +240,21 @@ impl Module {
         for (_, v) in ans.iter_mut() {
             v.sort();
         }
+        ans
+    }
+    pub fn collect_types(&self, container: &mut HashMap<String, TypeAlias>) {
+        let scope = self.scope.as_ref().unwrap();
+        for scope_type in &scope.type_alias {
+            container.insert(scope_type.ident.to_string(), scope_type.clone());
+        }
+        for scope_module in &scope.modules {
+            scope_module.collect_types(container);
+        }
+    }
+
+    pub fn collect_types_to_pool(&self) -> HashMap<String, TypeAlias> {
+        let mut ans = HashMap::new();
+        self.collect_types(&mut ans);
         ans
     }
 }

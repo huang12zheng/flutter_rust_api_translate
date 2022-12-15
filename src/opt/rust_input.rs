@@ -39,6 +39,7 @@ impl IrFile {
 }
 
 pub type TraitToImplPool = HashMap<String, Vec<Impl>>;
+pub type TypePool = HashMap<String, TypeAlias>;
 
 pub trait RustInputInfo {
     fn get_irs(&self) -> Vec<IrFile>;
