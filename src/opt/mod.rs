@@ -83,7 +83,7 @@ impl OptArray {
     }
     pub fn run_generate_bound_enum(&self) {
         // generate enum file
-        if self.need_translation() {
+        if !self.bound_oject_pool.is_empty() {
             self.generate_impl_file();
             addition_with_path(
                 &self.root_src_file,
@@ -93,7 +93,13 @@ impl OptArray {
     }
 
     fn need_translation(&self) -> bool {
-        !(self.bound_oject_pool.is_empty() && self.type_pool.is_empty())
+        let types = self.type_pool.keys().cloned().collect::<Vec<String>>();
+        let no_need_type_translate = self.type_pool.is_empty()
+            || self
+                .configs
+                .iter()
+                .all(|config| !contains_with_path(config.rust_input_path.as_str(), types.clone()));
+        !(self.bound_oject_pool.is_empty() && no_need_type_translate)
     }
     pub fn run_generate_api_translation(&self) {
         if !self.need_translation() {

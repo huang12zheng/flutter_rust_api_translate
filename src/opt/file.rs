@@ -13,3 +13,7 @@ pub(crate) fn addition_with_path(path: impl AsRef<str>, additions: Vec<String>) 
     let content = content + split + &additions.join("\n");
     fs::write(path.as_ref(), content).unwrap();
 }
+pub(crate) fn contains_with_path(path: &str, keys: Vec<String>) -> bool {
+    let content = fs::read_to_string(path).unwrap();
+    !keys.iter().all(|key| !content.contains(key))
+}
